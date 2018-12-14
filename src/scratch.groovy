@@ -23,14 +23,14 @@ if (args.size() != 2) {
 def sourceFolder = new File(args[0])
 def outputFolder = new File(args[1])
 
-ffmpeg = new FFmpeg("/usr/local/bin/ffmpeg")
-ffprobe = new FFprobe("/usr/local/bin/ffprobe")
+ffmpeg = new FFmpeg("/usr/bin/ffmpeg")
+ffprobe = new FFprobe("/usr/bin/ffprobe")
 
 //------------------------------------------------------------------------
 // Core
 
-def referenceVideoExtension = [".MTS", ".mts", ".m2ts"]
-def referenceMetaExtension = [".mta", ".modd", ".DS_Store"]
+def referenceVideoExtension = [".MTS", ".mts", ".m2ts", ".3gp"]
+def referenceMetaExtension = [".mta", ".moff", "modd", ".DS_Store", ".db", ".ini"]
 
 filesToTranscode = []
 filesToDelete = []
