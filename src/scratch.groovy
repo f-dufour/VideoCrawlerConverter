@@ -1,15 +1,15 @@
 #!/usr/bin/env groovy
-
 @Grab(group = 'net.bramp.ffmpeg', module = 'ffmpeg', version = '0.6.2')
 
 import net.bramp.ffmpeg.FFmpeg
+import net.bramp.ffmpeg.FFmpegExecutor
 import net.bramp.ffmpeg.FFprobe
 import net.bramp.ffmpeg.builder.FFmpegBuilder
-import net.bramp.ffmpeg.FFmpegExecutor
-import net.bramp.ffmpeg.probe.FFmpegProbeResult
 import net.bramp.ffmpeg.job.FFmpegJob
-import net.bramp.ffmpeg.progress.ProgressListener
+import net.bramp.ffmpeg.probe.FFmpegProbeResult
 import net.bramp.ffmpeg.progress.Progress
+import net.bramp.ffmpeg.progress.ProgressListener
+
 import java.util.concurrent.TimeUnit
 
 //------------------------------------------------------------------------
@@ -80,27 +80,6 @@ def getFileNameWithoutExtension(File file) {
 }
 
 //------------------------------------------------------------------------
-// Crawling
-
-println("\nRUN:")
-println("===\n")
-
-dive(sourceFolder, referenceVideoExtension, referenceMetaExtension)
-println("\n> ${numberOfFoldersExplored} folders explored")
-
-println("\nSUMMARY:")
-println("=======")
-println("\n(${filesToTranscode.size()}) Files to willTranscode:")
-filesToTranscode.forEach({
-    println(it.getAbsolutePath())
-})
-
-println("\n(${filesToDelete.size()}) Files to delete:")
-filesToDelete.forEach({
-    println(it.getAbsolutePath())
-})
-
-//------------------------------------------------------------------------
 // FFmpeg stuff
 
 def ffmpegTranscode(File inputFile, File outputFolder) {
@@ -145,6 +124,27 @@ def ffmpegTranscode(File inputFile, File outputFolder) {
 
     job.run()
 }
+
+//------------------------------------------------------------------------
+// Crawling
+
+println("\nRUN:")
+println("===\n")
+
+dive(sourceFolder, referenceVideoExtension, referenceMetaExtension)
+println("\n> ${numberOfFoldersExplored} folders explored")
+
+println("\nSUMMARY:")
+println("=======")
+println("\n(${filesToTranscode.size()}) Files to willTranscode:")
+filesToTranscode.forEach({
+    println(it.getAbsolutePath())
+})
+
+println("\n(${filesToDelete.size()}) Files to delete:")
+filesToDelete.forEach({
+    println(it.getAbsolutePath())
+})
 
 //------------------------------------------------------------------------
 // User input
@@ -193,6 +193,5 @@ if (deleteOriginals == "y") {
 }
 
 //TODO write log
-
 
 System.exit(0)
