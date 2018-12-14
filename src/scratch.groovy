@@ -1,4 +1,5 @@
 #!/usr/bin/env groovy
+
 @Grab(group = 'net.bramp.ffmpeg', module = 'ffmpeg', version = '0.6.2')
 
 import net.bramp.ffmpeg.FFmpeg
@@ -10,8 +11,6 @@ import net.bramp.ffmpeg.probe.FFmpegProbeResult
 import net.bramp.ffmpeg.progress.Progress
 import net.bramp.ffmpeg.progress.ProgressListener
 
-import java.util.concurrent.TimeUnit
-
 //------------------------------------------------------------------------
 // CLI arguments
 
@@ -22,9 +21,10 @@ if (args.size() != 2) {
 
 def sourceFolder = new File(args[0])
 def outputFolder = new File(args[1])
-
-ffmpeg = new FFmpeg("/usr/local/bin/ffmpeg")
-ffprobe = new FFprobe("/usr/local/bin/ffprobe")
+def ffmpegBin = "which ffmpeg".execute().text.replace("\n", "")
+def ffprobeBin = "which ffprobe".execute().text.replace("\n", "")
+ffmpeg = new FFmpeg(ffmpegBin)
+ffprobe = new FFprobe(ffprobeBin)
 
 //------------------------------------------------------------------------
 // Core
@@ -56,7 +56,7 @@ def dive(File folder, ArrayList<String> extensionsToTranscode, ArrayList<String>
         } else if (file.isDirectory()) {
             dive(file, extensionsToTranscode, extensionsToDelete)
             numberOfFoldersExplored++
-        } else if (file.isDirectory() && file.listFiles().size() > 0){ //TODO: fonctionne?
+	} else if (file.isDirectory() && file.listFiles().size() == 0){ //TODO: fonctionne?
             file.delete()
         } else {
             println("\tFile ${file.name} with extension ${extension} is ignored")
