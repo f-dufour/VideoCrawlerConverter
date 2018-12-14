@@ -23,14 +23,18 @@ if (args.size() != 2) {
 def sourceFolder = new File(args[0])
 def outputFolder = new File(args[1])
 
-ffmpeg = new FFmpeg("/usr/bin/ffmpeg")
-ffprobe = new FFprobe("/usr/bin/ffprobe")
+ffmpeg = new FFmpeg("/usr/local/bin/ffmpeg")
+ffprobe = new FFprobe("/usr/local/bin/ffprobe")
 
 //------------------------------------------------------------------------
 // Core
 
-def referenceVideoExtension = [".MTS", ".mts", ".m2ts", ".3gp"]
-def referenceMetaExtension = [".mta", ".moff", "modd", ".DS_Store", ".db", ".ini"]
+def referenceVideoExtension = [".MTS", ".mts", ".m2ts", ".3gp", ".avi", ".AVI"]
+def referenceMetaExtension = [".mta", ".moff", ".modd", ".DS_Store",
+                              ".db", ".ini", ".html", ".css", ".js",
+                              ".json", ".xml", ".nomedia", ".bin", ".txt",
+                              ".asec", ".pod", ".downloadTemp", ".cache",
+                              ".m", ".image", ".log", ".bak", ".dat", ".lnk", "NOEXT"]
 
 filesToTranscode = []
 filesToDelete = []
@@ -52,6 +56,8 @@ def dive(File folder, ArrayList<String> extensionsToTranscode, ArrayList<String>
         } else if (file.isDirectory()) {
             dive(file, extensionsToTranscode, extensionsToDelete)
             numberOfFoldersExplored++
+        } else if (file.isDirectory() && file.listFiles().size() > 0){ //TODO: fonctionne?
+            file.delete()
         } else {
             println("\tFile ${file.name} with extension ${extension} is ignored")
         }
@@ -66,8 +72,12 @@ def getFileExtension(File file) {
     int lastIndexOf = name.lastIndexOf(".")
     if (lastIndexOf != -1) {
         return name.substring(lastIndexOf)
+    } else if (lastIndexOf == -1 & file.isFile()) {
+        return "NOEXT"
+    } else{
+        // It is a folder
     }
-    return "NO EXTENSION FOR FILE ${file.name}"
+
 }
 
 def getFileNameWithoutExtension(File file) {
@@ -136,7 +146,7 @@ println("\n> ${numberOfFoldersExplored} folders explored")
 
 println("\nSUMMARY:")
 println("=======")
-println("\n(${filesToTranscode.size()}) Files to willTranscode:")
+println("\n(${filesToTranscode.size()}) Files to transcode:")
 filesToTranscode.forEach({
     println(it.getAbsolutePath())
 })
@@ -162,7 +172,7 @@ println("")
 
 if (willTranscode == "y") {
     filesToTranscode.forEach({
-        ffmpegTranscode(it, outputFolder)
+        //ffmpegTranscode(it, outputFolder)
     })
 } else {
     println("${filesToTranscode.size()} files are not transcoded")
@@ -171,7 +181,7 @@ if (willTranscode == "y") {
 if (willDelete == "y") {
     filesToDelete.forEach({
         println("Deleting ${it.absolutePath}")
-        it.delete()
+        //it.delete()
     })
 } else {
     println("\n${filesToDelete.size()} files stay in place and are not deleted")
@@ -180,17 +190,22 @@ if (willDelete == "y") {
 //------------------------------------------------------------------------
 // Clean up
 
-print("\nWould you like to delete original videos? (${filesToTranscode.size()} files) (y/n): ")
-def deleteOriginals = System.in.newReader().readLine()
+if (willTranscode == "y") {
 
-if (deleteOriginals == "y") {
-    filesToTranscode.forEach({
-        println("Deleting ${it.absolutePath}")
-        it.delete()
-    })
-} else {
-    println("${filesToTranscode.size()} files are not deleted")
+    print("\nWould you like to delete original videos? (${filesToTranscode.size()} files) (y/n): ")
+    def deleteOriginals = System.in.newReader().readLine()
+
+    if (deleteOriginals == "y") {
+        filesToTranscode.forEach({
+            println("Deleting ${it.absolutePath}")
+            it.delete()
+        })
+    } else {
+        println("${filesToTranscode.size()} files are not deleted")
+    }
 }
+
+println("\nExiting...")
 
 //TODO write log
 
