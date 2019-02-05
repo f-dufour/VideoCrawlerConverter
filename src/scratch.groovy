@@ -1,6 +1,7 @@
 #!/usr/bin/env groovy
 
 @Grab(group = 'net.bramp.ffmpeg', module = 'ffmpeg', version = '0.6.2')
+@Grab(group='com.github.mjeanroy', module = 'exiftool-lib', version = '2.1.0')
 
 import net.bramp.ffmpeg.FFmpeg
 import net.bramp.ffmpeg.FFmpegExecutor
@@ -12,7 +13,7 @@ import net.bramp.ffmpeg.progress.Progress
 import net.bramp.ffmpeg.progress.ProgressListener
 
 //------------------------------------------------------------------------
-// CLI arguments
+// STEP 0: CLI arguments
 
 if (args.size() != 2) {
     println('\nUsage: scratch /path/to/sourcefolder /path/to/outputFolder\n')
@@ -21,45 +22,57 @@ if (args.size() != 2) {
 
 def sourceFolder = new File(args[0])
 def outputFolder = new File(args[1])
+
 def ffmpegBin = "which ffmpeg".execute().text.replace("\n", "")
 def ffprobeBin = "which ffprobe".execute().text.replace("\n", "")
+
 ffmpeg = new FFmpeg(ffmpegBin)
 ffprobe = new FFprobe(ffprobeBin)
 
 //------------------------------------------------------------------------
-// Core
+// STEP 1: Scan the folder structure
 
-def referenceVideoExtension = [".MTS", ".mts", ".m2ts", ".3gp", ".avi", ".AVI"]
-def referenceMetaExtension = [".mta", ".moff", ".modd", ".DS_Store",
-                              ".db", ".ini", ".html", ".css", ".js",
-                              ".json", ".xml", ".nomedia", ".bin", ".txt",
-                              ".asec", ".pod", ".downloadTemp", ".cache",
-                              ".m", ".image", ".log", ".bak", ".dat", ".lnk", "NOEXT"]
-
-filesToTranscode = []
-filesToDelete = []
+photoFiles = []
+videoFiles = []
+safeToDeleteFiles = []
+ignoredFiles = []
 numberOfFoldersExplored = 1
 
-def dive(File folder, ArrayList<String> extensionsToTranscode, ArrayList<String> extensionsToDelete) {
+dive(sourceFolder)
+
+//------------------------------------------------------------------------
+// STEP 2: Organize the files
+
+
+//------------------------------------------------------------------------
+// STEP 3: Clean and Exit
+
+
+
+
+
+
+
+
+def dive(File folder) {
     println("DIVING IN: ${folder.name}")
     File[] files = folder.listFiles()
-
     for (File file : files) {
         def extension = getFileExtension(file)
-        // File has to be transcoded
-        if (extensionsToTranscode.contains(extension)) {
-            filesToTranscode.add(file)
-            // File has to be deleted
-        } else if (extensionsToDelete.contains(extension)) {
-            filesToDelete.add(file)
-            // It is a folder
+
+        if (Extensions.video.contains(extension)) {
+            videoFiles.add(file)
+        } else if (Extensions.photo.contains(extension)) {
+            photoFiles.add(file)
+        } else if (Extensions.meta.contains(extension)) {
+            safeToDeleteFiles.add(file)
+        } else if (file.isDirectory() && file.listFiles().size() == 0){ //TODO: Effective?
+            safeToDeleteFile.add(file)
         } else if (file.isDirectory()) {
-            dive(file, extensionsToTranscode, extensionsToDelete)
             numberOfFoldersExplored++
-	} else if (file.isDirectory() && file.listFiles().size() == 0){ //TODO: fonctionne?
-            file.delete()
+            dive(file)
         } else {
-            println("\tFile ${file.name} with extension ${extension} is ignored")
+            ignoredFiles.add(file)
         }
     }
 }
@@ -90,7 +103,7 @@ def getFileNameWithoutExtension(File file) {
 }
 
 //------------------------------------------------------------------------
-// FFmpeg stuff
+// Transcoding video files
 
 def ffmpegTranscode(File inputFile, File outputFolder) {
 
@@ -136,77 +149,4 @@ def ffmpegTranscode(File inputFile, File outputFolder) {
 }
 
 //------------------------------------------------------------------------
-// Crawling
-
-println("\nRUN:")
-println("===\n")
-
-dive(sourceFolder, referenceVideoExtension, referenceMetaExtension)
-println("\n> ${numberOfFoldersExplored} folders explored")
-
-println("\nSUMMARY:")
-println("=======")
-println("\n(${filesToTranscode.size()}) Files to transcode:")
-filesToTranscode.forEach({
-    println(it.getAbsolutePath())
-})
-
-println("\n(${filesToDelete.size()}) Files to delete:")
-filesToDelete.forEach({
-    println(it.getAbsolutePath())
-})
-
-//------------------------------------------------------------------------
-// User input
-
-print("\nWould you like to trascode the ${filesToTranscode.size()} files? (y/n): ")
-def willTranscode = System.in.newReader().readLine()
-print("Would you like to delete the ${filesToDelete.size()} files? (y/n): ")
-def willDelete = System.in.newReader().readLine()
-println("")
-
-//------------------------------------------------------------------------
-// Process
-
-//TODO: time
-
-if (willTranscode == "y") {
-    filesToTranscode.forEach({
-        //ffmpegTranscode(it, outputFolder)
-    })
-} else {
-    println("${filesToTranscode.size()} files are not transcoded")
-}
-
-if (willDelete == "y") {
-    filesToDelete.forEach({
-        println("Deleting ${it.absolutePath}")
-        //it.delete()
-    })
-} else {
-    println("\n${filesToDelete.size()} files stay in place and are not deleted")
-}
-
-//------------------------------------------------------------------------
-// Clean up
-
-if (willTranscode == "y") {
-
-    print("\nWould you like to delete original videos? (${filesToTranscode.size()} files) (y/n): ")
-    def deleteOriginals = System.in.newReader().readLine()
-
-    if (deleteOriginals == "y") {
-        filesToTranscode.forEach({
-            println("Deleting ${it.absolutePath}")
-            it.delete()
-        })
-    } else {
-        println("${filesToTranscode.size()} files are not deleted")
-    }
-}
-
-println("\nExiting...")
-
-//TODO write log
-
-System.exit(0)
+// Converting photo files
